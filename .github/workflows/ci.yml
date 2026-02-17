@@ -20,35 +20,19 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4 
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
-
-      - name: Setup root .env
-        run: |
-          if [ -f .env.sample ]; then
-            cp .env.sample .env
-          fi
-        shell: bash
-
-      - name: Get latest commit message
-        id: latest_commit_message
-        run: |
-          TITLE=""
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            TITLE="${{ github.event.pull_request.title }}"
-          else
-            TITLE=$(git log -1 --pretty=format:%s || echo "No commit message found")
-          fi
-          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
-        shell: bash
 
       - name: Cache Bun dependencies
         uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-bun-
 
@@ -60,3 +44,13 @@ jobs:
 
       - name: Test Coverage
         run: bun run test:cov
+
+      - name: Version bump
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: bun run version
+
+      - name: Publish to npm
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: bun publish --access public
+        env:
+          BUN_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

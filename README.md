@@ -1,97 +1,132 @@
-# npm-package-template
+# @pzarkov/module-cost
 
-A modern NPM package template powered by [Bun](https://bun.sh), TypeScript, and Biome.
+Find out which of your dependencies is slowing you down. Zero dependencies.
 
-## Features
-
-- **Bun** - Fast runtime, package manager, and test runner
-- **TypeScript** - Strict mode, ESNext target, decorator support
-- **Biome** - Linting, formatting, and import organization
-- **Husky** - Pre-commit linting (lint-staged) and conventional commit message validation
-- **GitHub Actions CI** - Build, lint, and typecheck on push/PR to main
-- **Semantic versioning** - Auto version bumps based on conventional commits
-- **Environment docs generation** - Auto-generate env variable documentation from `.env.sample` files
-- **Dual package output** - CJS + ESM + type declarations
-
-## Getting Started
+## Install
 
 ```bash
-# Install dependencies
-bun install
-
-# Run in development mode (watch)
-bun run dev
-
-# Build
-bun run build
-
-# Run tests
-bun test
-
-# Lint & format
-bun run lint
-bun run format
-
-# Type check
-bun run typecheck
+npm install -g @pzarkov/module-cost
 ```
 
-## Scripts
+Or use directly with npx:
 
-| Script | Description |
+```bash
+npx @pzarkov/module-cost
+```
+
+## Usage
+
+Run `module-cost` in the directory you want to analyze:
+
+```bash
+module-cost
+```
+
+### Options
+
+| Flag | Description |
 |---|---|
-| `bun run dev` | Watch mode development |
-| `bun run start` | Run compiled output |
-| `bun run build` | Compile TypeScript |
-| `bun test` | Run tests (bail on first failure) |
-| `bun test --watch` | Run tests in watch mode |
-| `bun run lint` | Lint and auto-fix with Biome |
-| `bun run format` | Format code with Biome |
-| `bun run typecheck` | Type check without emitting |
-| `bun run version` | Bump version from conventional commits |
-| `bun run version:dry-run` | Preview version bump |
-| `bun run gen:env:docs` | Generate env variable docs |
-| `bun run mod:cost` | Analyze dependency costs |
+| `--path <dir>` | Directory to scan (default: current directory) |
+| `--less` | Show only the top 10 modules |
+| `--include-dev` | Include devDependencies |
+| `--json` | Output as JSON |
+| `--help, -h` | Show help |
+| `--version, -v` | Show version |
 
-## Project Structure
+### Example output
 
 ```
-src/               # Source code
-dist/              # Compiled output (CJS, ESM, type declarations)
-scripts/           # Utility scripts (versioning, env docs)
-.github/ci.yml     # CI workflow
-.husky/            # Git hooks
+┌────────────────┬────────────┬─────────┐
+│ name           │   children │    size │
+├────────────────┼────────────┼─────────┤
+│ typescript     │          0 │  22.53M │
+├────────────────┼────────────┼─────────┤
+│ @types/node    │          0 │   2.26M │
+├────────────────┼────────────┼─────────┤
+│ glob           │          0 │   1.53M │
+├────────────────┼────────────┼─────────┤
+│ @biomejs/biome │          0 │ 636.42K │
+├────────────────┼────────────┼─────────┤
+│ lint-staged    │          0 │ 145.28K │
+├────────────────┼────────────┼─────────┤
+│ husky          │          0 │   3.95K │
+├────────────────┼────────────┼─────────┤
+│ @types/bun     │          0 │   3.56K │
+├────────────────┼────────────┼─────────┤
+│ 7 modules      │ 0 children │  27.09M │
+└────────────────┴────────────┴─────────┘
 ```
 
-## Commit Convention
+## Programmatic API
 
-Commits are validated against the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+```typescript
+import { scanModules, formatTable, formatJson } from '@pzarkov/module-cost';
 
+const result = scanModules({
+  path: process.cwd(),
+  includeDev: false,
+});
+
+// Table output
+console.log(formatTable(result));
+
+// JSON output
+console.log(formatJson(result));
+
+// Access raw data
+for (const pkg of result.packages) {
+  console.log(pkg.name, pkg.version, pkg.size, pkg.children);
+}
 ```
-type(scope)?: description
+
+### API
+
+#### `scanModules(options: ScanOptions): ScanResult`
+
+Scans `node_modules` and returns cost data for each package.
+
+- **`options.path`** - Directory containing `node_modules` (default: cwd)
+- **`options.includeDev`** - Include devDependencies in results
+
+Returns `ScanResult` with:
+- **`packages`** - Array of `PackageCost` sorted by size descending
+- **`totalSize`** - Sum of all package sizes in bytes
+- **`totalChildren`** - Sum of all nested dependency counts
+- **`totalPackages`** - Number of packages scanned
+
+#### `formatTable(result: ScanResult): string`
+
+Renders scan results as a Unicode box-drawing table.
+
+#### `formatJson(result: ScanResult): string`
+
+Renders scan results as formatted JSON with human-readable sizes.
+
+#### `formatBytes(bytes: number): string`
+
+Formats a byte count into a human-readable string (e.g. `22.50M`).
+
+## How it works
+
+1. Reads `dependencies` (and optionally `devDependencies`) from your `package.json`
+2. Walks each package directory in `node_modules` recursively to compute disk size
+3. Checks for nested `node_modules` within each package to count children
+4. Handles scoped packages (`@scope/name`) correctly
+5. Sorts by size descending and renders a summary table
+
+## Development
+
+```bash
+bun install
+bun run dev              # Watch mode
+bun test                 # Run tests
+bun run build            # Build CJS + ESM + types
+bun run mod:cost         # Analyze prod dependencies
+bun run mod:cost:dev     # Analyze all dependencies (incl. dev)
+bun run mod:cost:json    # JSON output
+bun run mod:cost:less    # Top 10 only
 ```
-
-Allowed types: `feat`, `fix`, `chore`, `docs`, `test`, `style`, `refactor`, `perf`, `build`, `ci`, `revert`, `security`, `sync`
-
-## Versioning
-
-Run `bun run version` to auto-bump based on the last commit message:
-
-- **Breaking change** (`!` suffix or `BREAKING CHANGE` in body) → major
-- **`feat:`** → minor
-- **Everything else** → patch
-
-Use `bun run version:dry-run` to preview without making changes.
 
 ## License
 
 [MIT](LICENSE)
-
-## Speed
-```sh
-bun run --parallel build lint typecheck
-lint      | Checked 8 files in 8ms. No fixes applied.
-lint      | Done in 165ms
-build     | Done in 484ms
-typecheck | Done in 511ms
-```

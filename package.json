@@ -1,14 +1,32 @@
 {
-  "name": "bun-basic-template",
-  "version": "0.0.1",
-  "description": "Bun basic template",
+  "name": "@pzarkov/module-cost",
+  "version": "0.1.0",
+  "description": "Analyze the cost of your node_modules - zero dependencies",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "bin": {
+    "module-cost": "./dist/cjs/cli.js"
+  },
   "files": [
     "LICENSE",
     "README.md",
     "dist"
+  ],
+  "keywords": [
+    "node_modules",
+    "cost",
+    "size",
+    "dependencies",
+    "analyzer",
+    "cli"
   ],
   "author": {
     "name": "Petar Zarkov",
@@ -19,27 +37,33 @@
     "access": "public"
   },
   "license": "MIT",
-  "homepage": "https://github.com/petarzarkov/bun-template#readme",
+  "homepage": "https://github.com/petarzarkov/module-cost#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/petarzarkov/bun-template"
+    "url": "https://github.com/petarzarkov/module-cost"
   },
   "scripts": {
     "prepare": "husky || true",
-    "dev": "bun --watch src/index.ts",
-    "start": "bun --max-old-space-size=1536 dist/index.js",
+    "dev": "bun --watch src/cli.ts",
+    "start": "bun src/cli.ts",
     "prebuild": "rm -rf dist",
-    "build": "tsc -p tsconfig.build.json",
+    "build:esm": "tsc -p tsconfig.build.esm.json",
+    "build:cjs": "tsc -p tsconfig.build.cjs.json",
+    "build:types": "tsc -p tsconfig.build.types.json",
+    "build": "bun run --parallel build:esm build:cjs build:types",
+    "postbuild": "echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json && echo '{\"type\":\"module\"}' > dist/esm/package.json && chmod +x dist/cjs/cli.js",
     "test": "bun test --bail",
     "test:watch": "bun test --watch",
     "test:cov": "bun test --coverage",
     "lint": "biome check --write --unsafe .",
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit --skipLibCheck --skipDefaultLibCheck",
-    "gen:env:docs": "bun ./scripts/gen-env-docs.ts",
+    "mod:cost": "bun src/cli.ts",
+    "mod:cost:dev": "bun src/cli.ts --include-dev",
+    "mod:cost:json": "bun src/cli.ts --json --include-dev",
+    "mod:cost:less": "bun src/cli.ts --include-dev --less",
     "version": "bun ./scripts/version.ts",
-    "version:dry-run": "DRY_RUN=true bun ./scripts/version.ts",
-    "mod:cost": "bunx cost-of-modules --no-install"
+    "version:dry-run": "DRY_RUN=true bun ./scripts/version.ts"
   },
   "dependencies": {},
   "devDependencies": {
