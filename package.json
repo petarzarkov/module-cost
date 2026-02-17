@@ -1,6 +1,6 @@
 {
   "name": "@pzarkov/module-cost",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Analyze the cost of your node_modules - zero dependencies",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
