@@ -45,6 +45,12 @@ jobs:
       - name: Test Coverage
         run: bun run test:cov
 
+      - name: Configure git identity
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Version bump
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: bun run version
