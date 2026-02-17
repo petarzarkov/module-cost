@@ -61,4 +61,4 @@ jobs:
 
       - name: Publish to npm
         if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: bun publish --access public
+        run: export XDG_CONFIG_HOME="$HOME" && bun publish --access public --no-git-checks
