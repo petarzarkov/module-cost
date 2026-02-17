@@ -1,4 +1,4 @@
-# @pzarkov/module-cost
+# @pzarkov/module-cost [![version](https://img.shields.io/npm/v/@pzarkov/module-cost?label=version)](https://www.npmjs.com/package/@pzarkov/module-cost)
 
 Find out which of your dependencies is slowing you down. Zero dependencies.
 
