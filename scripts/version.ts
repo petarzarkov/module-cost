@@ -142,7 +142,19 @@ const determineBumpType = ():
       }
 
       console.log(`🚀 Pushing to branch: ${branch}`);
-      execSync(`git push origin HEAD:refs/heads/${branch}`);
+      const token = process.env.GITHUB_TOKEN;
+      if (token) {
+        const repo =
+          process.env.GITHUB_REPOSITORY ??
+          'petarzarkov/module-cost';
+        execSync(
+          `git push https://x-access-token:${token}@github.com/${repo}.git HEAD:refs/heads/${branch}`,
+        );
+      } else {
+        execSync(
+          `git push origin HEAD:refs/heads/${branch}`,
+        );
+      }
       console.log(
         `✨ Successfully pushed version ${newVersion}`,
       );
